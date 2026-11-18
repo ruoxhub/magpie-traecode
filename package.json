@@ -1,0 +1,51 @@
+{
+  "name": "magpie-traecode",
+  "version": "0.1.0",
+  "description": "Trae (ByteDance AI IDE) provider for Magpie: Trae CN (trae.cn) and Trae Global (trae.ai), with Trae's own browser sign-in, the SOLO llm_utils_chat endpoint with its AES-GCM encrypted body, live model lists, daily check-in and credits",
+  "type": "module",
+  "main": "./opencode.mjs",
+  "exports": {
+    ".": {
+      "import": "./opencode2.mjs",
+      "default": "./opencode2.mjs"
+    }
+  },
+  "keywords": [
+    "magpie-plugin",
+    "opencode-plugin",
+    "opencode",
+    "provider",
+    "trae",
+    "trae-cn",
+    "trae-global",
+    "bytedance"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruoxhub/magpie-traecode.git"
+  },
+  "homepage": "https://github.com/ruoxhub/magpie-traecode#readme",
+  "bugs": {
+    "url": "https://github.com/ruoxhub/magpie-traecode/issues"
+  },
+  "files": [
+    "index.mjs",
+    "opencode.mjs",
+    "opencode2.mjs",
+    "lib/",
+    "scripts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "e2e": "node scripts/e2e-live.mjs"
+  },
+  "magpie": {
+    "maxConcurrency": 4
+  }
+}
