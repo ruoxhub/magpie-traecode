@@ -175,7 +175,7 @@ ISO 字符串，都认；卡片还会给出 `resetsAt`（最近一个到期日�
 
 ```sh
 cd apps/magpie-traecode
-npm test          # node --test test/*.test.mjs，115 个用例，不需要任何网络与账号
+npm test          # node --test test/*.test.mjs，117 个用例，不需要任何网络与账号
 npm run e2e ../../account.json   # 真链路：会花额度，只看结果不要频繁跑
 ```
 

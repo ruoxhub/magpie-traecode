@@ -1,6 +1,6 @@
 {
   "name": "magpie-traecode",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Trae (ByteDance AI IDE) provider for Magpie: Trae CN (trae.cn) and Trae Global (trae.ai), with Trae's own browser sign-in, the SOLO llm_utils_chat endpoint with its AES-GCM encrypted body, live model lists, daily check-in and credits",
   "type": "module",
   "main": "./opencode.mjs",

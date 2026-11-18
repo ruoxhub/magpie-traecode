@@ -392,6 +392,60 @@ test("usage 碰上 401：先强制换一次令牌再重试，并把新令牌写�
   }
 })
 
+test("粘贴导入：两个站点都要交出 callback（magpie 靠它拿凭证）", async () => {
+  // magpie 的 host：authorize 返回的对象没有 callback 就当登录失败，报
+  // "<provider>'s sign-in gave nothing to finish it with"；OpenCode 2 则是
+  // r.callback is not a function。粘贴导入曾经把 success 直接从 authorize 返回，两边都登不上。
+  const oauth = await startServer((entry, res) => {
+    res.setHeader("content-type", "application/json")
+    res.end(JSON.stringify({ Result: { UserID: "u-9", ScreenName: "阿九" } }))
+  })
+  try {
+    for (const id of ["trae-cn", "trae-global"]) {
+      const site = SITES[id]
+      const hooks = await makePlugin({ ...site, hosts: { ...site.hosts, oauth: oauth.base } })({ client: fakeClient() })
+      const method = hooks.auth.methods.find((m) => m.label.includes("粘贴"))
+      const started = await method.authorize({
+        credential: JSON.stringify({ accessToken: "tok-9", refreshToken: "ref-9", domain: site.webHost }),
+      })
+      assert.equal(started?.type, undefined, `${id} 不该从 authorize 直接返回 success`)
+      assert.equal(typeof started.callback, "function", `${id} 的 authorize 没有 callback`)
+      const got = await started.callback()
+      assert.equal(got.type, "success")
+      assert.equal(got.provider, id)
+    }
+  } finally {
+    await oauth.close()
+  }
+})
+
+test("粘贴导入成功路径：authorize 交出 callback，callback 交回凭证", async () => {
+  // GetUserInfo：令牌可用就回账号
+  const oauth = await startServer((entry, res) => {
+    res.setHeader("content-type", "application/json")
+    res.end(JSON.stringify({ Result: { UserID: "u-9", ScreenName: "阿九" } }))
+  })
+  try {
+    const hooks = await makePlugin(siteAt({ oauth: oauth.base }))({ client: fakeClient() })
+    const method = hooks.auth.methods.find((m) => m.label.includes("粘贴"))
+    const started = await method.authorize({
+      credential: JSON.stringify({ accessToken: "tok-9", refreshToken: "ref-9", domain: "trae.cn" }),
+    })
+    assert.notEqual(started.type, "failed")
+    assert.equal(typeof started.callback, "function")
+    const got = await started.callback()
+    assert.equal(got.type, "success")
+    assert.equal(got.access, "tok-9")
+    assert.equal(got.refresh, "ref-9")
+    assert.equal(got.domain, "trae.cn")
+    assert.equal(got.accountId, "阿九")
+    // 令牌放在 X-Cloudide-Token 上问 GetUserInfo，不是拼在 query 里
+    assert.equal(oauth.seen[0].headers["x-cloudide-token"], "tok-9")
+  } finally {
+    await oauth.close()
+  }
+})
+
 test("粘贴导入：别区的凭证要当场拒（两地令牌不通用）", async () => {
   const hooks = await makePlugin(SITES["trae-cn"])({ client: fakeClient() })
   const method = hooks.auth.methods.find((m) => m.label.includes("粘贴"))

@@ -208,4 +208,30 @@ try {
   bad("积分", e?.message ?? e)
 }
 
+// ---- 5. 登录：粘贴 JSON 导入（magpie 的 authorize → callback 流程）----------
+// magpie 的 host 只在 authorize 交出 callback 时才能完成登录；从 authorize 直接
+// 返回 success 会报 "sign-in gave nothing to finish it with"。
+try {
+  const m = hooks.auth.methods.find((x) => x.label.includes("粘贴"))
+  const started = await m.authorize({ credential: raw })
+  if (started?.type === "failed") throw new Error(started.error)
+  if (typeof started?.callback !== "function")
+    throw new Error("authorize 没交出 callback（magpie 会报 gave nothing to finish it with）")
+  const saved = await started.callback(undefined, {})
+  if (saved?.type !== "success") throw new Error(`callback 没回 success：${JSON.stringify(saved).slice(0, 120)}`)
+  ok("粘贴导入", `callback 交出凭证：${saved.accountId || saved.uid}（access ${String(saved.access).length} 字节，domain ${saved.domain}）`)
+  // 存下来的凭证要真能用：magpie 交给 loader 的是 type: "oauth" 那份
+  const loader2 = await hooks.auth.loader(async () => ({ ...saved, type: "oauth" }))
+  const res2 = await loader2.fetch("https://placeholder/chat/completions", {
+    method: "POST",
+    body: JSON.stringify({ model, stream: false, max_tokens: 16, messages: [{ role: "user", content: "只回复两个字：收到" }] }),
+  })
+  const body2 = await res2.text()
+  if (!res2.ok) throw new Error(`导入的凭证对话失败：HTTP ${res2.status} ${body2.slice(0, 160)}`)
+  ok("导入后对话", JSON.stringify(JSON.parse(body2).choices[0].message.content ?? ""))
+} catch (e) {
+  bad("粘贴导入", e?.message ?? e)
+}
+
+
 console.log(`\n结论：${nonStreamOK ? "加密 + SOLO 头 + SSE → OpenAI 链路在真实账号上跑通" : "对话链路没通过，按上面的 ✖ 行排查"}`)
